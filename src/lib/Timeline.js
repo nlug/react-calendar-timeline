@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types'
 import React, { Component } from 'react'
 import moment from 'moment'
-import './Timeline.scss'
+// import './Timeline.scss' // Remove when build for create-react-app
 
 import Items from './items/Items'
 import InfoLabel from './layout/InfoLabel'
@@ -85,6 +85,7 @@ export default class ReactCalendarTimeline extends Component {
     headerLabelGroupHeight: PropTypes.number,
     headerLabelHeight: PropTypes.number,
     itemHeightRatio: PropTypes.number,
+    disableZoom: PropTypes.bool,
 
     minZoom: PropTypes.number,
     maxZoom: PropTypes.number,
@@ -209,6 +210,7 @@ export default class ReactCalendarTimeline extends Component {
     headerLabelGroupHeight: 30,
     headerLabelHeight: 30,
     itemHeightRatio: 0.65,
+    disableZoom: false,
 
     minZoom: 60 * 60 * 1000, // 1 hour
     maxZoom: 5 * 365.24 * 86400 * 1000, // 5 years
@@ -630,34 +632,38 @@ export default class ReactCalendarTimeline extends Component {
   }
 
   changeZoom (scale, offset = 0.5) {
-    const { minZoom, maxZoom } = this.props
-    const oldZoom = this.state.visibleTimeEnd - this.state.visibleTimeStart
-    const newZoom = Math.min(Math.max(Math.round(oldZoom * scale), minZoom), maxZoom) // min 1 min, max 20 years
-    const newVisibleTimeStart = Math.round(this.state.visibleTimeStart + (oldZoom - newZoom) * offset)
+    if (!this.props.disableZoom) {
+      const { minZoom, maxZoom } = this.props
+      const oldZoom = this.state.visibleTimeEnd - this.state.visibleTimeStart
+      const newZoom = Math.min(Math.max(Math.round(oldZoom * scale), minZoom), maxZoom) // min 1 min, max 20 years
+      const newVisibleTimeStart = Math.round(this.state.visibleTimeStart + (oldZoom - newZoom) * offset)
 
-    this.props.onTimeChange(newVisibleTimeStart, newVisibleTimeStart + newZoom, this.updateScrollCanvas)
+      this.props.onTimeChange(newVisibleTimeStart, newVisibleTimeStart + newZoom, this.updateScrollCanvas)
+    }
   }
 
   showPeriod = (from, unit) => {
-    let visibleTimeStart = from.valueOf()
-    let visibleTimeEnd = moment(from).add(1, unit).valueOf()
-    let zoom = visibleTimeEnd - visibleTimeStart
+    if (!this.props.disableZoom) {
+      let visibleTimeStart = from.valueOf()
+      let visibleTimeEnd = moment(from).add(1, unit).valueOf()
+      let zoom = visibleTimeEnd - visibleTimeStart
 
-    // can't zoom in more than to show one hour
-    if (zoom < 360000) {
-      return
+      // can't zoom in more than to show one hour
+      if (zoom < 360000) {
+        return
+      }
+
+      // clicked on the big header and already focused here, zoom out
+      if (unit !== 'year' && this.state.visibleTimeStart === visibleTimeStart && this.state.visibleTimeEnd === visibleTimeEnd) {
+        let nextUnit = getNextUnit(unit)
+
+        visibleTimeStart = from.startOf(nextUnit).valueOf()
+        visibleTimeEnd = moment(visibleTimeStart).add(1, nextUnit)
+        zoom = visibleTimeEnd - visibleTimeStart
+      }
+
+      this.props.onTimeChange(visibleTimeStart, visibleTimeStart + zoom, this.updateScrollCanvas)
     }
-
-    // clicked on the big header and already focused here, zoom out
-    if (unit !== 'year' && this.state.visibleTimeStart === visibleTimeStart && this.state.visibleTimeEnd === visibleTimeEnd) {
-      let nextUnit = getNextUnit(unit)
-
-      visibleTimeStart = from.startOf(nextUnit).valueOf()
-      visibleTimeEnd = moment(visibleTimeStart).add(1, nextUnit)
-      zoom = visibleTimeEnd - visibleTimeStart
-    }
-
-    this.props.onTimeChange(visibleTimeStart, visibleTimeStart + zoom, this.updateScrollCanvas)
   }
 
   selectItem = (item, clickType, e) => {

@@ -36,6 +36,8 @@ At the very minimum:
 
 ```jsx
 import Timeline from 'react-calendar-timeline'
+import 'react-calendar-timeline/src/lib/Timeline.scss' // For scss loader (ONLY USE IN Create-react-app)
+import 'react-calendar-timeline/lib/lib/Timeline.sss' // For css loader (ONLY USE IN Create-react-app)
 import moment from 'moment'
 
 const groups = [
@@ -168,6 +170,9 @@ Height of the bottom header line. Default `30`
 
 ### itemHeightRatio
 What percentage of the height of the line is taken by the item? Default `0.65`
+
+### disableZoom
+Allow zoom or not. Default `true`
 
 ### minZoom
 Smallest time the calendar can zoom to in milliseconds. Default `60 * 60 * 1000` (1 hour)
