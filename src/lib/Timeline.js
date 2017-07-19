@@ -493,6 +493,21 @@ export default class ReactCalendarTimeline extends Component {
     }
 
     if (this.state.visibleTimeStart !== visibleTimeStart || this.state.visibleTimeEnd !== visibleTimeStart + zoom) {
+      if (this.props.disableZoom) {
+        const timeStart = visibleTimeStart
+        const timeEnd = visibleTimeStart + zoom
+        const minTime = moment(this.props.visibleTimeStart)
+        const maxTime = moment(this.props.visibleTimeEnd)
+        if (timeStart < minTime && timeEnd > maxTime) {
+          this.updateScrollCanvas(minTime, maxTime)
+        } else if (timeStart < minTime) {
+          this.updateScrollCanvas(minTime, minTime + (timeEnd - timeStart))
+        } else if (timeEnd > maxTime) {
+          this.updateScrollCanvas(maxTime - (timeEnd - timeStart), maxTime)
+        } else {
+          this.updateScrollCanvas(timeStart, timeEnd)
+        }
+      }
       this.props.onTimeChange(visibleTimeStart, visibleTimeStart + zoom, this.updateScrollCanvas)
     }
   }
